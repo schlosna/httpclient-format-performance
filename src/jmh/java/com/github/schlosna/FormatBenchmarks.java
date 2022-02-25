@@ -51,8 +51,19 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @SuppressWarnings("designforextension")
 public class FormatBenchmarks {
     private static final int WIDTH = 10;
+    private static final String PREFIX = "ex-";
+    private static final String[] prefixes = generatePrefixes(PREFIX, WIDTH);
 
     private final AtomicLong count = new AtomicLong(9_999_000_000L);
+
+
+    private static String[] generatePrefixes(String prefix, int count) {
+        String[] prefixes = new String[count];
+        for (int i = 0; i < prefixes.length; i++) {
+            prefixes[i] = prefix + zeros(i);
+        }
+        return prefixes;
+    }
 
     @Benchmark
     public String stringFormat() {
@@ -72,17 +83,21 @@ public class FormatBenchmarks {
      */
     static String createId(long value) {
         String longString = Long.toString(value);
-        return "ex-" + zeroPad(WIDTH - longString.length()) + longString;
+        return prefix(WIDTH - longString.length()) + longString;
     }
 
     /**
      * Hand rolled equivalent to JDK 11 `"0".repeat(count)` due to JDK 8 dependency
      */
-    private static String zeroPad(int leadingZeros) {
-        if (leadingZeros <= 0) {
-            return "";
+    private static String prefix(int leadingZeros) {
+        if (leadingZeros <= 0 || leadingZeros >= prefixes.length) {
+            return PREFIX;
         }
-        char[] zeros = new char[leadingZeros];
+        return prefixes[leadingZeros];
+    }
+
+    private static String zeros(int count) {
+        char[] zeros = new char[count];
         Arrays.fill(zeros, '0');
         return new String(zeros);
     }
