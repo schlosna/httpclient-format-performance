@@ -27,6 +27,7 @@
 package com.github.schlosna;
 
 import java.util.Arrays;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -38,7 +39,6 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.profile.GCProfiler;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
@@ -56,6 +56,9 @@ public class FormatBenchmarks {
 
     private final AtomicLong count = new AtomicLong(9_999_000_000L);
 
+    private static long getValue() {
+        return ThreadLocalRandom.current().nextLong(10000000L);
+    }
 
     private static String[] generatePrefixes(String prefix, int count) {
         String[] prefixes = new String[count];
@@ -67,12 +70,65 @@ public class FormatBenchmarks {
 
     @Benchmark
     public String stringFormat() {
-        return String.format("ex-%010d", count.incrementAndGet());
+        return String.format("ex-%010d", getValue());
     }
 
     @Benchmark
-    public String zeroPad() {
-        return createId(count.incrementAndGet());
+    public String zeroPadPrefixesArray() {
+        return createId(getValue());
+    }
+
+    @Benchmark
+    public String zeroPadPrefixesSwitch() {
+        return createIdSwitch(getValue());
+    }
+
+    @Benchmark
+    public String zeroPadProposed() {
+        return createIdProposed(getValue());
+    }
+
+    static String createIdSwitch(long value) {
+        String longString = Long.toString(value);
+        switch (longString.length()) {
+            case 1:
+                return "ex-000000000" + longString;
+            case 2:
+                return "ex-00000000" + longString;
+            case 3:
+                return "ex-0000000" + longString;
+            case 4:
+                return "ex-000000" + longString;
+            case 5:
+                return "ex-00000" + longString;
+            case 6:
+                return "ex-0000" + longString;
+            case 7:
+                return "ex-000" + longString;
+            case 8:
+                return "ex-00" + longString;
+            case 9:
+                return "ex-0" + longString;
+            default:
+                return "ex-" + longString;
+        }
+    }
+
+    static String createIdProposed(long value) {
+        String longString = Long.toString(value);
+        return "ex-" + zeroPad(10 - longString.length()) + longString;
+    }
+
+    /**
+     * Hand rolled equivalent to JDK 11 `"0".repeat(count)` due to JDK 8 dependency
+     */
+    private static String zeroPad(int leadingZeros) {
+        if (leadingZeros <= 0) {
+            return "";
+        }
+        char[] zeros = new char[leadingZeros];
+        Arrays.fill(zeros, '0');
+        return new String(zeros);
     }
 
     /**
@@ -105,7 +161,6 @@ public class FormatBenchmarks {
     public static void main(String[] _args) throws Exception {
         new Runner(new OptionsBuilder()
                         .include(FormatBenchmarks.class.getSimpleName())
-                        .addProfiler(GCProfiler.class)
                         .build())
                 .run();
     }
