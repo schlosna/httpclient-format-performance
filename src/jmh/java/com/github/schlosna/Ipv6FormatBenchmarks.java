@@ -74,10 +74,10 @@ public class Ipv6FormatBenchmarks {
 
         static boolean hasValidIPv6ColonCount(final String input) {
             int colonCount = 0;
-            int colonIndex = input.indexOf(COLON_CHAR);
-            while (colonIndex > -1) {
-                colonCount++;
-                colonIndex = input.indexOf(COLON_CHAR, colonIndex + 1);
+            for (int i = 0; i < input.length(); i++) {
+                if (input.charAt(i) == COLON_CHAR) {
+                    colonCount++;
+                }
             }
 
             // IPv6 address must have at least 2 colons and not more than 7 (i.e. 8 fields)
