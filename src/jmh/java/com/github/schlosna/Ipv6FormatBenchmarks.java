@@ -35,34 +35,25 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 @State(Scope.Thread)
-@Measurement(iterations = 4, time = 10)
-@Warmup(iterations = 2, time = 10)
+@Measurement(iterations = 2, time = 5)
+@Warmup(iterations = 1, time = 5)
 @Fork(1)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @SuppressWarnings("designforextension")
 public class Ipv6FormatBenchmarks {
-    private static final String IPV4_LOCALHOST = "127.0.0.1";
-    private static final String IPV6_LOCALHOST = "0:0:0:0:0:0:0:1";
+
+    @Param({"127.0.0.1", "0:0:0:0:0:0:0:1"})
+    String address;
 
     @Benchmark
-    public boolean ipv4_isIPv6Address_original() {
-        return InetAddressUtils.isIPv6Address(IPV4_LOCALHOST);
+    public boolean isIPv6Address_original() {
+        return InetAddressUtils.isIPv6Address(address);
     }
 
     @Benchmark
-    public boolean ipv4_isIPv6Address_improved() {
-        return Improved.isIPv6Address(IPV4_LOCALHOST);
-    }
-
-    @Benchmark
-    public boolean ipv6_isIPv6Address_original() {
-        return InetAddressUtils.isIPv6Address(IPV6_LOCALHOST);
-    }
-
-    @Benchmark
-    public boolean ipv6_isIPv6Address_improved() {
-        return Improved.isIPv6Address(IPV6_LOCALHOST);
+    public boolean isIPv6Address_improved() {
+        return Improved.isIPv6Address(address);
     }
 
     static class Improved {
