@@ -36,8 +36,8 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 @State(Scope.Thread)
-@Measurement(iterations = 2, time = 2)
-@Warmup(iterations = 1, time = 2)
+@Measurement(iterations = 1, time = 1)
+@Warmup(iterations = 1, time = 1)
 @Fork(1)
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -45,9 +45,8 @@ import java.util.regex.Pattern;
 public class Ipv6FormatBenchmarks {
     private static final Predicate<String> colonCountLoop = Improved::hasValidIPv6ColonCountLoop;
     private static final Predicate<String> colonCountIndexOf = Improved::hasValidIPv6ColonCountIndexOf;
-    private static final Predicate<String> colonCountContainsLoop = Improved::hasValidIPv6ColonCountContainsLoop;
 
-    @Param({"127.0.0.1", "0:0:0:0:0:0:0:1", "ABCD:EF01:2345:6789:ABCD:EF01:2345:6789"})
+    @Param({"127.0.0.1", "0:0:0:0:0:0:0:1", "2001:0db8:0:0::1428:57ab", "ABCD:EF01:2345:6789:ABCD:EF01:2345:6789"})
     String address;
 
     @Benchmark
@@ -65,10 +64,6 @@ public class Ipv6FormatBenchmarks {
         return Improved.isIPv6Address(address, colonCountIndexOf);
     }
 
-    @Benchmark
-    public boolean isIPv6Address_colonCountContainsLoop() {
-        return Improved.isIPv6Address(address, colonCountContainsLoop);
-    }
 
     static class Improved {
 
@@ -99,21 +94,15 @@ public class Ipv6FormatBenchmarks {
         }
 
         static boolean hasValidIPv6ColonCountIndexOf(String input) {
-            int colonCount = 0;
-            int colonIndex = input.indexOf(COLON_CHAR);
-            while (colonIndex > -1) {
+            int colonCount = -1;
+            int colonIndex = -1;
+            do {
                 colonCount++;
                 colonIndex = input.indexOf(COLON_CHAR, colonIndex + 1);
-            }
+            } while (colonIndex > -1);
+
             // IPv6 address must have at least 2 colons and not more than 7 (i.e. 8 fields)
             return colonCount >= 2 && colonCount <= MAX_COLON_COUNT;
-        }
-
-        static boolean hasValidIPv6ColonCountContainsLoop(String input) {
-            if (input.indexOf(COLON_CHAR) < 0) {
-                return false;
-            }
-            return hasValidIPv6ColonCountLoop(input);
         }
 
         /**
